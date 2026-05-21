@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PlacementIQ – Predict</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+
+<nav class="nav">
+  <span class="nav-brand">PlacementIQ</span>
+  <div class="nav-links">
+    <a href="/" class="active">Predict</a>
+    <a href="/history">History</a>
+    <a href="/dashboard">Dashboard</a>
+  </div>
+</nav>
+
+<div class="page">
+  <div class="page-title">
+    <h1 id="headline">Placement Readiness</h1>
+    <p>Fill in your profile and get an instant readiness score</p>
+  </div>
+
+  <div class="card">
+    <form id="predictForm" novalidate>
+
+      <!-- Personal -->
+      <div class="card-header">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        Personal Info
+      </div>
+      <div class="grid-2" style="margin-bottom:24px;">
+        <div class="field">
+          <label>Full Name</label>
+          <input type="text" name="name" placeholder="e.g. Priya Sharma" required>
+        </div>
+        <div class="field">
+          <label>Branch</label>
+          <input type="text" name="branch" placeholder="e.g. Computer Science" required>
+        </div>
+      </div>
+
+      <!-- Academic -->
+      <div class="card-header">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/></svg>
+        Academic &amp; Experience
+      </div>
+      <div class="grid-4" style="margin-bottom:24px;">
+        <div class="field">
+          <label>CGPA (0–10)</label>
+          <input type="number" name="cgpa" step="0.01" min="0" max="10" placeholder="8.5" required>
+        </div>
+        <div class="field">
+          <label>Backlogs</label>
+          <input type="number" name="backlogs" min="0" placeholder="0" required>
+        </div>
+        <div class="field">
+          <label>Internships</label>
+          <input type="number" name="internships" min="0" placeholder="1" required>
+        </div>
+        <div class="field">
+          <label>Projects</label>
+          <input type="number" name="projects" min="0" placeholder="2" required>
+        </div>
+      </div>
+
+      <!-- Skills -->
+      <div class="card-header">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        Skill Scores (0–100)
+      </div>
+      <div class="grid-2" style="margin-bottom:24px;">
+        <div class="slider-field">
+          <div class="slider-label"><span>Aptitude</span><span class="slider-val" id="val_aptitude">70</span></div>
+          <input type="range" name="aptitude" min="0" max="100" value="70">
+        </div>
+        <div class="slider-field">
+          <div class="slider-label"><span>Problem Solving / DSA</span><span class="slider-val" id="val_problem_solving">70</span></div>
+          <input type="range" name="problem_solving" min="0" max="100" value="70">
+        </div>
+        <div class="slider-field">
+          <div class="slider-label"><span>Communication</span><span class="slider-val" id="val_communication">70</span></div>
+          <input type="range" name="communication" min="0" max="100" value="70">
+        </div>
+        <div class="slider-field">
+          <div class="slider-label"><span>Technical Knowledge</span><span class="slider-val" id="val_technical">70</span></div>
+          <input type="range" name="technical" min="0" max="100" value="70">
+        </div>
+      </div>
+
+      <button type="submit" class="btn btn-primary">Analyze &amp; Predict</button>
+    </form>
+  </div>
+
+  <div id="result" style="display:none;"></div>
+</div>
+
+<div id="toast"></div>
+<script src="/static/js/main.js"></script>
+<script>
+  // Typing headline on load
+  window.addEventListener("DOMContentLoaded", () => {
+    typeHeadline(document.getElementById("headline"), "Placement Readiness", 60);
+  });
+</script>
+</body>
+</html>

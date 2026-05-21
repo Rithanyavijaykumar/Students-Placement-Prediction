@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PlacementIQ – Dashboard</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+<nav class="nav">
+  <span class="nav-brand">PlacementIQ</span>
+  <div class="nav-links">
+    <a href="/">Predict</a>
+    <a href="/history">History</a>
+    <a href="/dashboard" class="active">Dashboard</a>
+  </div>
+</nav>
+
+<div class="page page-wide">
+  <div class="page-title">
+    <h1>Dashboard</h1>
+    <p>Aggregate insights across all assessments</p>
+  </div>
+
+  <!-- KPIs -->
+  <div class="kpi-grid">
+    <div class="kpi"><div class="kpi-val purple" id="kpiTotal">0</div><div class="kpi-lbl">Total Assessments</div></div>
+    <div class="kpi"><div class="kpi-val green"  id="kpiReady">0</div><div class="kpi-lbl">Ready</div></div>
+    <div class="kpi"><div class="kpi-val yellow" id="kpiAvg">0</div><div class="kpi-lbl">Average</div></div>
+    <div class="kpi"><div class="kpi-val red"    id="kpiNeeds">0</div><div class="kpi-lbl">Needs Work</div></div>
+    <div class="kpi"><div class="kpi-val purple" id="kpiScore">0</div><div class="kpi-lbl">Avg Score</div></div>
+    <div class="kpi"><div class="kpi-val purple" id="kpiCgpa">0</div><div class="kpi-lbl">Avg CGPA</div></div>
+  </div>
+
+  <!-- Charts row 1 -->
+  <div class="charts-row">
+    <div class="card">
+      <div class="card-header">Result Distribution</div>
+      <div class="chart-box"><canvas id="donutChart"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-header">Avg Skill Breakdown</div>
+      <div class="chart-box"><canvas id="radarChart"></canvas></div>
+    </div>
+  </div>
+
+  <!-- Charts row 2 -->
+  <div class="charts-row">
+    <div class="card">
+      <div class="card-header">Branch Distribution</div>
+      <div class="chart-box"><canvas id="barChart"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-header">Score Trend — Last 10</div>
+      <div class="chart-box"><canvas id="lineChart"></canvas></div>
+    </div>
+  </div>
+
+  <!-- Top performers -->
+  <div class="card">
+    <div class="card-header">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+      Top Performers
+    </div>
+    <div id="leaderboard"></div>
+  </div>
+
+  <!-- Empty -->
+  <div id="emptyState" class="empty" style="display:none;">
+    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+    <p>No assessments yet. <a href="/">Run your first prediction →</a></p>
+  </div>
+</div>
+
+<div id="toast"></div>
+<script src="/static/js/main.js"></script>
+<script>
+  const C = { tick: "#8b949e", grid: "rgba(48,54,61,0.6)", font: "Inter" };
+  const sc = (extra) => ({
+    x: { ticks: { color: C.tick, font: { family: C.font, size: 11 } }, grid: { color: C.grid }, ...extra?.x },
+    y: { ticks: { color: C.tick, font: { family: C.font, size: 11 } }, grid: { color: C.grid }, ...extra?.y },
+  });
+
+  async function loadDashboard() {
+    try {
+      const res = await fetch("/api/stats");
+      const d   = await res.json();
+
+      if (d.total === 0) { document.getElementById("emptyState").style.display = "block"; return; }
+
+      /* Animated KPI counters */
+      animateCount(document.getElementById("kpiTotal"), d.total);
+      animateCount(document.getElementById("kpiReady"), d.ready);
+      animateCount(document.getElementById("kpiAvg"),   d.average);
+      animateCount(document.getElementById("kpiNeeds"), d.needs_work);
+      animateCount(document.getElementById("kpiScore"), d.avg_score, "%");
+      animateCount(document.getElementById("kpiCgpa"),  d.avg_cgpa);
+
+      /* Donut */
+      new Chart(document.getElementById("donutChart"), {
+        type: "doughnut",
+        data: {
+          labels: ["Ready","Average","Needs Work"],
+          datasets: [{ data: [d.ready, d.average, d.needs_work], backgroundColor: ["#22c55e","#f59e0b","#ef4444"], borderColor: "transparent", hoverOffset: 8 }],
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false, cutout: "68%",
+          plugins: {
+            legend: { labels: { color: C.tick, font: { family: C.font, size: 11 }, padding: 16 } },
+            tooltip: { callbacks: { label: ctx => ` ${ctx.label}: ${ctx.parsed}` } },
+          },
+          animation: { animateRotate: true, duration: 900 },
+        },
+      });
+
+      /* Radar – avg skill breakdown */
+      const sk = d.avg_skills;
+      new Chart(document.getElementById("radarChart"), {
+        type: "radar",
+        data: {
+          labels: ["Aptitude","DSA","Communication","Technical"],
+          datasets: [{
+            label: "Avg Score",
+            data: [sk.aptitude, sk.problem_solving, sk.communication, sk.technical],
+            backgroundColor: "rgba(124,58,237,0.15)",
+            borderColor: "#a78bfa",
+            pointBackgroundColor: "#a78bfa",
+            pointRadius: 5,
+            borderWidth: 2,
+          }],
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          scales: { r: {
+            min: 0, max: 100,
+            ticks: { display: false },
+            grid: { color: "rgba(48,54,61,0.8)" },
+            pointLabels: { color: C.tick, font: { family: C.font, size: 11 } },
+            angleLines: { color: "rgba(48,54,61,0.8)" },
+          }},
+          plugins: { legend: { display: false } },
+        },
+      });
+
+      /* Bar */
+      new Chart(document.getElementById("barChart"), {
+        type: "bar",
+        data: {
+          labels: d.branches.map(b => b.branch),
+          datasets: [{ data: d.branches.map(b => b.count), backgroundColor: "rgba(124,58,237,0.5)", borderColor: "#7c3aed", borderWidth: 1, borderRadius: 5 }],
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          scales: sc({ y: { ticks: { stepSize: 1 } } }),
+          plugins: { legend: { display: false } },
+        },
+      });
+
+      /* Line */
+      new Chart(document.getElementById("lineChart"), {
+        type: "line",
+        data: {
+          labels: d.trend.map(t => t.name),
+          datasets: [{
+            label: "Score", data: d.trend.map(t => t.score),
+            borderColor: "#a78bfa", backgroundColor: "rgba(167,139,250,0.08)",
+            pointBackgroundColor: "#a78bfa", pointRadius: 4, tension: 0.4, fill: true,
+          }],
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          scales: sc({ y: { min: 0, max: 100 } }),
+          plugins: { legend: { display: false } },
+        },
+      });
+
+      /* Leaderboard */
+      const medals = ["gold","silver","bronze"];
+      const medalSymbols = ["🥇","🥈","🥉"];
+      const bc = { "Ready":"badge-ready","Average":"badge-average","Needs Work":"badge-needs" };
+      document.getElementById("leaderboard").innerHTML = d.top_performers.length
+        ? d.top_performers.map((p, i) => `
+            <div class="leader-row">
+              <div class="leader-rank ${medals[i] || ""}">${medalSymbols[i] || (i+1)}</div>
+              <div>
+                <div class="leader-name">${esc(p.name)}</div>
+                <div class="leader-branch">${esc(p.branch)}</div>
+              </div>
+              <span class="badge ${bc[p.result] || ""}" style="margin-left:auto;margin-right:12px;">${p.result}</span>
+              <div class="leader-score">${p.score}%</div>
+            </div>`).join("")
+        : `<p style="color:var(--muted);font-size:0.875rem;">No data yet.</p>`;
+
+    } catch { showToast("Failed to load dashboard.", "error"); }
+  }
+
+  loadDashboard();
+</script>
+</body>
+</html>
